@@ -2,10 +2,10 @@
 
 'use strict';
 
-const cli = require('../lib/cli'),
+const cli = require('kss/lib/cli'),
   mockStream = require('mock-utf8-stream');
 
-describe('KssBuilderHandlebars builder (default)', function() {
+describe('KssBuilderHandlebars builder', function() {
   before(function() {
     let stdout = new mockStream.MockWritableStream(),
       stderr = new mockStream.MockWritableStream();
@@ -18,20 +18,38 @@ describe('KssBuilderHandlebars builder (default)', function() {
     return cli({
       stdout: stdout,
       stderr: stderr,
-      argv: ['node', 'bin/kss', 'test/fixtures/with-include', 'test/output/nested', '--builder', 'test/fixtures/builder']
+      argv: ['node', 'bin/kss', 'test/fixtures/with-include', 'test/output', '--builder', 'kss-handlebars', '--title', 'KssBuilderHandlebars Test Style Guide', '--verbose']
     }).then(() => {
       this.stdout = stdout.capturedData;
       return Promise.all(
         [
+          'index',
           'section-2',
-          'section-3'
+          'section-3',
+          'section-4'
         ].map(fileName => {
-          return fs.readFileAsync(path.join(__dirname, 'output', 'nested', fileName + '.html'), 'utf8').then(data => {
+          return fs.readFileAsync(path.join(__dirname, 'output', fileName + '.html'), 'utf8').then(data => {
             this.files[fileName] = data;
           });
         })
       );
     });
+  });
+
+  it('should build successfully', function() {
+    [
+      'index',
+      'section-2',
+      'section-3',
+      'section-4'
+    ].forEach(fileName => {
+      expect(this.files).to.have.property(fileName);
+      expect(this.files[fileName]).to.not.be.empty;
+    });
+  });
+
+  it('should render the --title option', function() {
+    expect(this.files['index']).to.include('<title>KssBuilderHandlebars Test Style Guide</title>');
   });
 
   describe('builder\'s Handlebars helpers', function() {
